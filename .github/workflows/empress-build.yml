@@ -1,0 +1,48 @@
+name: EMPRESS APK Build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Verify License
+      run: |
+        if [ ! -f empress.license ]; then
+          echo "❌ License file missing. Build aborted."
+          exit 1
+        fi
+
+        LICENSE=$(cat empress.license)
+        if [ "$LICENSE" != "PURE-STEAM-MIAMI-ONLY" ]; then
+          echo "❌ Invalid license key. Sovereignty breach detected."
+          exit 1
+        fi
+
+        echo "✅ License verified. EMPRESS ignition authorized."
+
+    - name: Set up JDK
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Grant execute permission to Gradle
+      run: chmod +x ./gradlew
+
+    - name: Build APK
+      run: ./gradlew assembleRelease
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: empress-apk
+        path: app/build/outputs/apk/release/*.apk
